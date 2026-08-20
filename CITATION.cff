@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the accompanying cUPMI paper."
+title: "cUPMI: Class-conditional Gaussian Augmentation for Stacking Meta-features"
+version: 0.1.0
+date-released: 2026-08-16
+authors:
+  - family-names: "Nelson"
+    given-names: "Max"
+preferred-citation:
+  type: article
+  title: "Gaussian Meta-Space Augmentation for Stacking Ensembles"
+  authors:
+    - family-names: "Nelson"
+      given-names: "Max"
+  year: 2026

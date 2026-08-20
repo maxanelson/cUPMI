@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.venv/
+venv/
+.DS_Store
+
+# Public package guardrails: do not commit real data or trained artifacts.
+*.csv
+*.jsonl
+*.nii
+*.nii.gz
+*.zip
+*.tar.gz
+*.pt
+*.pth
+*.joblib
+
+# Allow tiny synthetic fixtures only if a future test explicitly needs them.
+!tests/fixtures/*_synthetic.csv
