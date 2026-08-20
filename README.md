@@ -10,8 +10,8 @@ meta-space, use a shared pooled covariance matrix for stability, append syntheti
 meta-feature rows to the combiner's training fold, and keep the evaluation fold
 untouched.
 
-This repository is deliberately self-contained. It ships no real data, no
-trained weights, no private paths, and no study-specific run logs.
+This repository is deliberately self-contained: it ships only source code,
+documentation, tests, and synthetic examples.
 
 ## Install
 
@@ -74,15 +74,8 @@ The default sampler matches the conservative version used in the paper:
 - balanced synthetic generation across classes;
 - synthesis ratio `rho` selected inside the training fold.
 
-## Input contracts
+## Optional file formats
 
-See [docs/input_contracts.md](docs/input_contracts.md) for the optional CSV and
-split-JSON helper formats. The main API works directly with NumPy arrays, so no
-file format is required.
-
-## Publication checklist
-
-Before publishing or pushing a release candidate, run the checks in
-[docs/publication_checklist.md](docs/publication_checklist.md). They are designed
-to verify that only generic code, documentation, and synthetic examples are
-included.
+The main API works directly with NumPy arrays, so no file format is required.
+For file-based workflows, see [docs/input_contracts.md](docs/input_contracts.md)
+for the optional CSV and split-JSON helper formats.
