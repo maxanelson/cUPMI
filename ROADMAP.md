@@ -23,7 +23,7 @@ and to establish with public benchmarks when, and why, this kind of augmentation
   default; `PYTHONPATH=src pytest` works.
 - Gaps: no CI (`.github/` absent), no CHANGELOG, no docs beyond `docs/input_contracts.md`, no benchmarks, `pyproject.toml` ruff
   `target-version = "py39"` vs `requires-python >= 3.10`, authors field is generic.
-- Known naming issue: `_pooled_covariance` (`sampler.py`) calls `np.cov` on **all** rows, i.e. the **total** covariance
+- Known naming issue (fixed on the v0.2 branch): `_pooled_covariance` (`sampler.py`) calls `np.cov` on **all** rows, i.e. the **total** covariance
   (within-class + between-class scatter), not the pooled within-class covariance used in LDA. This is paper-faithful (the paper code did the
   same) but the name `"pooled"` (and the README's "shared pooled covariance") is misleading. See v0.2.
 
@@ -42,23 +42,25 @@ Order is priority order. Each milestone is releasable on its own; v0.1 default b
 
 **Goal:** one sampler with orthogonal knobs; cUPMI and noise-jitter become two settings of the same function.
 
-- [ ] Add `center` option in `sampler.py`: `"class_mean"` (current) | `"per_point"` with bandwidth `h` (sample a real row of the class, add `N(0, h^2 * Sigma)`).
-  Small `h` = noise jitter of real rows; large `h` approximates cUPMI.
-- [ ] Add `covariance` options, factored out of `_pooled_covariance` into a `_estimate_covariance(X, y, mode, ...)`:
-  `"total"` | `"pooled_within"` | `"per_class"` | `"rda"` (blend `lambda` between pooled-within and per-class) |
-  `"ledoit_wolf"` / `"oas"` (via `sklearn.covariance`) | `"diagonal"`.
+- [x] Add `center` option in `sampler.py`: `"class_mean"` (current) | `"per_point"` with bandwidth `h` (sample a real row of the class, add `N(0, h^2 * Sigma)`).
+  Small `h` = noise jitter of real rows; large `h` approximates cUPMI. (`bandwidth`, default 0.5.)
+- [x] Add `covariance` options, factored out of `_pooled_covariance` into a `_estimate_covariance(X, y, mode, ...)`:
+  shipped as `"total"` | `"within"` (pooled within-class) | `"within_lw"` | `"within_oas"` | `"diagonal"`.
+- [ ] Remaining covariance options: `"per_class"` | `"rda"` (blend `lambda` between pooled-within and per-class).
 - [ ] Add `allocation` option: `"balanced"` (current) | `"proportional"` | `"inverse_frequency"`; keep `AugmentationInfo` reporting per-class counts
   (replace scalar `n_synthetic_per_class` with a dict, keeping the old field for compatibility).
 - [ ] Return a `sample_weight` for synthetic rows (separate from `rho`); `CUPMICombiner` passes it to `estimator.fit` when supported, with a `synthetic_weight` parameter.
-- [ ] Backward compatibility: `covariance="pooled"` stays accepted as a deprecated alias of `"total"` and emits `FutureWarning`;
+- [x] Backward compatibility: `covariance="pooled"` stays accepted as a deprecated alias of `"total"` and emits `FutureWarning`;
   the default call (`center="class_mean"`, `covariance="total"`, `allocation="balanced"`, weight 1) must give bit-identical output to v0.1 for a fixed seed.
   Update README "Method defaults" to say "total covariance".
-- [ ] Expose the new knobs on `CUPMICombiner` and forward them in `evaluate_precomputed_streams` (fixing the dropped `covariance` / `ridge`).
+- [x] Expose the new knobs on `CUPMICombiner` and forward them in `evaluate_precomputed_streams` (fixing the dropped `covariance` / `ridge`).
 - [ ] Optionally let `CUPMICombiner` search over a small grid of `(rho, h)` or covariance mode in the inner CV.
 
 **Acceptance:**
-- Regression test in `tests/test_sampler.py`: v0.1 default output equals a stored reference array (generated from the v0.1 code, tiny synthetic data).
-- Unit tests: `per_point` with `h -> 0` returns near-copies of real rows; `pooled_within` equals LDA pooled covariance on a toy example; each allocation mode yields the expected counts.
+- Regression test in `tests/test_sampler.py`: v0.1 default output equals a verbatim v0.1 reimplementation run in the same process. (A stored
+  array does not work: `multivariate_normal`'s default SVD path gives different draws for the same seed on different NumPy/LAPACK builds;
+  observed 2026-10-01 between NumPy 2.4.2 and 2.5.2 on the same machine. Diagonal and Cholesky draws were identical.) Done.
+- Unit tests: `per_point` with `h -> 0` returns near-copies of real rows; `within` equals LDA pooled covariance on a toy example (done); each allocation mode yields the expected counts (pending).
 - Experiment: on the synthetic demo plus one real stream set, a grid over `center x covariance` reproduces the paper finding (cUPMI approx. noise-jitter) and maps the family (see Open questions).
 
 **Item: total vs pooled-within vs shrinkage covariance**

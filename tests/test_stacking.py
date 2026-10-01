@@ -57,3 +57,19 @@ def test_evaluate_precomputed_streams_forwards_covariance():
             seed=0,
             covariance="not-a-mode",
         )
+
+
+def test_evaluate_precomputed_streams_forwards_center():
+    y = np.tile([0, 1, 2], 30)
+    folds = np.arange(len(y)) % 3
+    streams = [_prob_stream(y, 0), _prob_stream(y, 1)]
+    with pytest.raises(ValueError, match="center"):
+        evaluate_precomputed_streams(
+            streams,
+            y,
+            folds,
+            estimator=RandomForestClassifier(n_estimators=5, random_state=0),
+            rhos=(1.0,),
+            seed=0,
+            center="not-a-mode",
+        )

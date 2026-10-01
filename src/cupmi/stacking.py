@@ -36,8 +36,10 @@ def evaluate_precomputed_streams(
     scoring="roc_auc_ovr",
     seed: int | None = None,
     eps: float = 1e-6,
-    covariance: str = "pooled",
+    covariance: str = "total",
     ridge: float = 1e-4,
+    center: str = "class_mean",
+    bandwidth: float = 0.5,
 ) -> EvaluationResult:
     """Evaluate plain stacking and cUPMI on fixed outer folds.
 
@@ -53,7 +55,7 @@ def evaluate_precomputed_streams(
         fold differs from the scoring fold.
     estimator:
         Level-1 estimator for both the plain stack and the cUPMI stack.
-    covariance, ridge:
+    covariance, ridge, center, bandwidth:
         Passed to ``CUPMICombiner``; see ``class_conditional_gaussian_augment``.
     """
 
@@ -88,6 +90,8 @@ def evaluate_precomputed_streams(
             seed=seed,
             covariance=covariance,
             ridge=ridge,
+            center=center,
+            bandwidth=bandwidth,
         )
         cupmi.fit(X[train], y[train])
         cupmi_proba[test] = cupmi.predict_proba(X[test])

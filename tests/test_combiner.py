@@ -49,3 +49,28 @@ def test_combiner_selects_zero_when_inner_cv_disabled():
     clf.fit(X, y)
 
     assert clf.rho_ == 0.0
+
+
+def test_combiner_supports_within_lw_noise_jitter():
+    X, y = make_classification(
+        n_samples=120,
+        n_features=6,
+        n_informative=4,
+        n_redundant=0,
+        n_classes=3,
+        n_clusters_per_class=1,
+        random_state=2,
+    )
+
+    clf = CUPMICombiner(
+        estimator="lr",
+        rhos=(0.0, 1.0),
+        seed=0,
+        covariance="within_lw",
+        center="per_point",
+        bandwidth=0.5,
+    )
+    clf.fit(X, y)
+
+    assert clf.get_params()["center"] == "per_point"
+    assert clf.predict_proba(X[:5]).shape == (5, 3)
