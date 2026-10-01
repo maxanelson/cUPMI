@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import numpy as np
+import pytest
 from sklearn.ensemble import RandomForestClassifier
 
 from cupmi import evaluate_precomputed_streams
@@ -40,3 +41,19 @@ def test_evaluate_precomputed_streams_shapes_and_scores():
     assert 0.0 <= result.stack_score <= 1.0
     assert 0.0 <= result.cupmi_score <= 1.0
     assert result.delta == result.cupmi_score - result.stack_score
+
+
+def test_evaluate_precomputed_streams_forwards_covariance():
+    y = np.tile([0, 1, 2], 30)
+    folds = np.arange(len(y)) % 3
+    streams = [_prob_stream(y, 0), _prob_stream(y, 1)]
+    with pytest.raises(ValueError, match="covariance"):
+        evaluate_precomputed_streams(
+            streams,
+            y,
+            folds,
+            estimator=RandomForestClassifier(n_estimators=5, random_state=0),
+            rhos=(1.0,),
+            seed=0,
+            covariance="not-a-mode",
+        )
