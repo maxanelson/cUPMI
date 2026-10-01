@@ -1,5 +1,7 @@
 # cUPMI
 
+See the [development roadmap](ROADMAP.md).
+
 cUPMI is a small Python package for **class-conditional Gaussian augmentation of
 stacking meta-features**. It is intended for multi-stream classification systems
 where several base models produce class probabilities and a level-1 combiner
