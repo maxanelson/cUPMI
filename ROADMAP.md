@@ -63,7 +63,8 @@ Order is priority order. Each milestone is releasable on its own; v0.1 default b
 
 **Item: total vs pooled-within vs shrinkage covariance**
 - Experiment: same folds, seeds and combiner, vary only `covariance in {total, pooled_within, ledoit_wolf, oas, diagonal}` at `center="class_mean"`; report delta vs un-augmented stack.
-- Result: pending (see UPMI-2026 experiments).
+- Result (IPMN, 2026-10-01; UPMI-2026 `covariance_study/`): Ledoit-Wolf-shrunk within-class covariance was the most consistent arm for XGB: ΔQWK +0.028 (S8) and +0.026 (fused S16) vs. +0.022 / +0.005 for the paper's total covariance, positive in 5/5 seeds. No effect on RF. Rescaling within-class to total trace did not reproduce the gain, so shrinkage (estimation noise), not spread, looks like the lever. **Candidate default for v0.2: `covariance="within_lw"`, pending benchmarks.**
+- At rho=2, 45–92% of synthetic rows contain a log-probability > 0 (invalid). Raises the priority of v0.3.
 
 ### v0.3: Sampling space (log-prob vs logit vs ILR)
 
@@ -143,7 +144,7 @@ Order is priority order. Each milestone is releasable on its own; v0.1 default b
   cUPMI +0.022, Gaussian-noise jitter of real rows +0.024, oversample +0.007, SMOTE -0.010. On fused 16-stream XGB: noise +0.019 vs cUPMI +0.005.
   On the RF flagship, nothing helped. cUPMI and noise-jitter appear to be corners of one family (v0.2 `center` x `covariance`).
 - Is the gain from class-mean centering, the covariance shape, the amount of synthetic mass (`rho`), or just smoothing the combiner's decision function?
-- Total vs pooled-within vs shrinkage covariance. Result: pending (see UPMI-2026 experiments).
+- Total vs pooled-within vs shrinkage covariance. First IPMN result favours shrunk within-class covariance (see v0.2); needs confirmation on the benchmark suite.
 - Does the effect depend on combiner capacity (XGB helps, RF does not) and on meta-set size / number of streams (16-stream fused favors jitter)?
 - How often does log-prob sampling leave the simplex, and does fixing that (ILR) matter for performance?
 - Is `rho` selection by inner CV (3 folds, `scoring="roc_auc_ovr"`) well matched to the outer metric (QWK)?
