@@ -15,6 +15,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from .meta_features import align_predict_proba
+from .metrics import quadratic_weighted_kappa
 from .sampler import class_conditional_gaussian_augment
 
 Scoring = str | Callable[[np.ndarray, np.ndarray, np.ndarray], float]
@@ -89,7 +90,11 @@ def _score_probabilities(
     if scoring == "accuracy":
         pred = classes[proba.argmax(axis=1)]
         return float(accuracy_score(y_true, pred))
-    raise ValueError("scoring must be 'roc_auc_ovr', 'neg_log_loss', 'accuracy', or a callable.")
+    if scoring == "qwk":
+        return quadratic_weighted_kappa(y_true, proba, classes)
+    raise ValueError(
+        "scoring must be 'roc_auc_ovr', 'qwk', 'neg_log_loss', 'accuracy', or a callable."
+    )
 
 
 class CUPMICombiner(BaseEstimator, ClassifierMixin):

@@ -101,8 +101,8 @@ Order is priority order. Each milestone is releasable on its own; v0.1 default b
 
 - [ ] `diagnostics.py`: `plot_pca_real_vs_synthetic(X, y, X_syn, y_syn)` (matplotlib, `examples` extra), coverage metrics, `mmd(X_real, X_syn, kernel="rbf")`.
 - [ ] `evaluation.py`: `paired_bootstrap_delta(scores_aug, scores_stack, n_boot, seed)` returning delta and CI, resampling seeds/folds paired; wrapper over repeated seeds of `evaluate_precomputed_streams`.
-- [ ] `metrics.py`: add `neg_log_loss`-style and QWK scorers usable as `CUPMICombiner(scoring=...)` (QWK as a callable matching `(y, proba, classes)`).
-- [ ] Report multi-seed delta tables (mean, CI, selected rho distribution) from `EvaluationResult`s.
+- [x] `metrics.py`: add `neg_log_loss`-style and QWK scorers usable as `CUPMICombiner(scoring=...)` (QWK as a callable matching `(y, proba, classes)`). (`scoring="qwk"`.)
+- [x] Report multi-seed delta tables (mean, CI, selected rho distribution) from `EvaluationResult`s. (`evaluate_over_seeds`; t-interval over seeds. Paired bootstrap still open.)
 
 **Acceptance:**
 - Bootstrap CI covers 0 on a null synthetic case (augmentation has no effect) in a seeded test and excludes 0 on a constructed positive case.
@@ -114,7 +114,7 @@ Order is priority order. Each milestone is releasable on its own; v0.1 default b
 
 - [ ] `ordinal=True` mode in sampler: interpolate/sample between adjacent class Gaussians (mixing coefficient `t`), emit soft labels (e.g. `1-t`, `t` over the two classes) plus `sample_weight`; needs a soft-label-capable estimator or label-splitting (duplicate row with weights).
 - [ ] Combiner support for soft-label augmentation (via weighted duplicate rows to stay sklearn-compatible).
-- [ ] QWK as a first-class scoring option in `CUPMICombiner` and `evaluate_precomputed_streams`.
+- [x] QWK as a first-class scoring option in `CUPMICombiner` and `evaluate_precomputed_streams` (`scoring="qwk"`).
 
 **Acceptance:** on ordinal benchmarks (v0.8 datasets), QWK delta vs the standard Gaussian augmenter, paired bootstrap CI reported; ship only if it beats the plain augmenter, otherwise keep as `experimental`.
 

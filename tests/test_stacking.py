@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 
-from cupmi import evaluate_precomputed_streams
+from cupmi import evaluate_over_seeds, evaluate_precomputed_streams
+from cupmi.metrics import macro_auc_ovr
 
 
 def _prob_stream(y, seed, confidence=0.72):
@@ -73,3 +74,43 @@ def test_evaluate_precomputed_streams_forwards_center():
             seed=0,
             center="not-a-mode",
         )
+
+
+def test_evaluate_over_seeds_matches_single_seed_runs_and_summarizes():
+    y = np.tile([0, 1, 2], 30)
+    folds = np.arange(len(y)) % 5
+    streams = [_prob_stream(y, 0), _prob_stream(y, 1, confidence=0.6)]
+    kwargs = dict(estimator="lr", rhos=(0.0, 1.0), inner_cv=2)
+
+    sweep = evaluate_over_seeds(
+        streams, y, folds, seeds=[3, 5, 8], metrics=["roc_auc_ovr", "qwk", macro_auc_ovr], **kwargs
+    )
+
+    assert sweep.seeds == (3, 5, 8)
+    assert sweep.metrics == ("roc_auc_ovr", "qwk", "macro_auc_ovr")
+    assert len(sweep.table) == 9
+    single = evaluate_precomputed_streams(streams, y, folds, seed=5, **kwargs)
+    row = sweep.table.query("seed == 5 and metric == 'roc_auc_ovr'").iloc[0]
+    assert row["delta"] == pytest.approx(single.delta)
+    auc = sweep.table.query("metric == 'roc_auc_ovr'")["delta"].to_numpy()
+    assert np.allclose(auc, sweep.table.query("metric == 'macro_auc_ovr'")["delta"].to_numpy())
+
+    summary = sweep.summary()
+    assert list(summary.index) == ["roc_auc_ovr", "qwk", "macro_auc_ovr"]
+    assert summary.loc["roc_auc_ovr", "n_seeds"] == 3
+    assert summary.loc["roc_auc_ovr", "delta_mean"] == pytest.approx(auc.mean())
+    assert summary.loc["roc_auc_ovr", "delta_ci_low"] <= summary.loc["roc_auc_ovr", "delta_mean"]
+    assert summary.loc["roc_auc_ovr", "delta_ci_high"] >= summary.loc["roc_auc_ovr", "delta_mean"]
+    assert sweep.selected_rhos.sum() == 3 * 5  # seeds x outer folds
+
+
+def test_evaluate_over_seeds_accepts_count_and_rejects_seed():
+    y = np.tile([0, 1], 30)
+    folds = np.arange(len(y)) % 3
+    streams = [_prob_stream(y, 0)]
+
+    sweep = evaluate_over_seeds(streams, y, folds, seeds=2, estimator="lr", rhos=(0.0,), inner_cv=2)
+    assert sweep.seeds == (0, 1)
+
+    with pytest.raises(TypeError, match="seeds"):
+        evaluate_over_seeds(streams, y, folds, seed=0, estimator="lr")

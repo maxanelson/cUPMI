@@ -1,6 +1,6 @@
 # cUPMI
 
-See the [development roadmap](ROADMAP.md).
+[User guide](docs/guide.md) · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)
 
 cUPMI is a small Python package for **class-conditional Gaussian augmentation of
 stacking meta-features**. It is intended for multi-stream classification systems
@@ -30,23 +30,31 @@ pytest
 
 ## Quickstart
 
+Inputs: aligned **out-of-fold** probability streams from your base models (each
+`(n_samples, n_classes)`), labels `y`, and the outer fold of each sample.
+
 ```python
-from sklearn.ensemble import RandomForestClassifier
+from cupmi import evaluate_over_seeds
+
+sweep = evaluate_over_seeds(
+    [stream_a_proba, stream_b_proba, stream_c_proba], y, folds,
+    seeds=5, metrics=["roc_auc_ovr", "qwk"], estimator="rf",
+)
+print(sweep.summary())   # plain stack vs cUPMI: mean delta, SD and interval over seeds
+```
+
+Fit a final combiner on all training samples:
+
+```python
 from cupmi import CUPMICombiner, stack_log_proba
 
-# Each probability stream has shape (n_samples, n_classes).
 U = stack_log_proba([stream_a_proba, stream_b_proba, stream_c_proba])
-
-clf = CUPMICombiner(
-    estimator=RandomForestClassifier(n_estimators=200, max_depth=4),
-    rhos=(0.0, 1.0, 2.0, 3.0, 4.0),
-    inner_cv=3,
-    scoring="roc_auc_ovr",
-    seed=0,
-)
-clf.fit(U_train, y_train)
-proba = clf.predict_proba(U_test)
+clf = CUPMICombiner(estimator="rf", seed=0).fit(U, y)
+proba = clf.predict_proba(U_new)   # U_new: stacked log-probabilities of new samples
 ```
+
+The [user guide](docs/guide.md) covers building out-of-fold streams, avoiding
+leakage, choosing settings, reading results, and reproducibility.
 
 For a complete synthetic demonstration:
 
@@ -62,8 +70,9 @@ python examples/synthetic_demo.py
   meta-features.
 - `stack_log_proba`: converts multiple base-model probability streams into the
   log-probability meta-feature matrix used by the combiner.
-- `evaluate_precomputed_streams`: a fold-locked evaluator for precomputed
-  probability streams.
+- `evaluate_over_seeds`: plain stack vs cUPMI on fixed outer folds, repeated over
+  seeds, with a per-metric summary. Use this to report results.
+- `evaluate_precomputed_streams`: the same comparison for a single seed.
 
 ## Method defaults
 
@@ -83,8 +92,8 @@ The default sampler matches the conservative version used in the paper:
 
 ## Augmentation options
 
-`class_conditional_gaussian_augment`, `CUPMICombiner` and
-`evaluate_precomputed_streams` share these knobs:
+`class_conditional_gaussian_augment`, `CUPMICombiner`,
+`evaluate_precomputed_streams` and `evaluate_over_seeds` share these knobs:
 
 | Option | Values | Meaning |
 | --- | --- | --- |
@@ -110,7 +119,8 @@ default stays `"total"` until this is confirmed on public benchmarks.
 Draws from a full (non-diagonal) covariance use NumPy's
 `Generator.multivariate_normal`, whose samples for a fixed seed can differ between
 NumPy/LAPACK builds. Results are reproducible within one environment; across
-environments only the distribution is.
+environments only the distribution is. Report results over several seeds
+(`evaluate_over_seeds`); see [Reproducibility](docs/guide.md#5-reproducibility).
 
 ## Optional file formats
 
