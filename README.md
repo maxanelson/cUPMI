@@ -1,6 +1,6 @@
 # cUPMI
 
-[User guide](docs/guide.md) · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)
+[User guide](docs/guide.md) · [Changelog](CHANGELOG.md)
 
 cUPMI is a small Python package for **class-conditional Gaussian augmentation of
 stacking meta-features**. It is intended for multi-stream classification systems
@@ -112,9 +112,7 @@ jitter = CUPMICombiner(estimator="xgb", covariance="diagonal",
                        center="per_point", bandwidth=0.5)               # noise jitter
 ```
 
-On the IPMN 3-class task (XGB combiner, 5 seeds), `within_lw` gave the most
-consistent QWK gain over the un-augmented stack; see [ROADMAP.md](ROADMAP.md). The
-default stays `"total"` until this is confirmed on public benchmarks.
+The default stays `"total"`, the estimator used in the paper.
 
 Draws from a full (non-diagonal) covariance use NumPy's
 `Generator.multivariate_normal`, whose samples for a fixed seed can differ between

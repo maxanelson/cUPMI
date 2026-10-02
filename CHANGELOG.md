@@ -21,7 +21,6 @@ All notable changes to this project are documented here. The format follows
 - `docs/guide.md`: user guide covering workflow, leakage rules, settings, result
   interpretation, reproducibility and troubleshooting.
 - GitHub Actions workflow running `pytest` on Python 3.10-3.13.
-- `ROADMAP.md`.
 
 ### Changed
 

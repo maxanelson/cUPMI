@@ -103,7 +103,7 @@ prediction time the base models are refit on all training data.
 | `rhos` | `(0, 1, 2, 3, 4)` | Keep `0` in the grid, so the selector can choose no augmentation. |
 | `inner_cv` | `3` | Lowered automatically to the smallest class count. If that is below 2, every `rho` scores 0 and the smallest `rho` in the grid is used. |
 | `scoring` | `"roc_auc_ovr"` | Selects `rho`. Options: `"roc_auc_ovr"`, `"qwk"` (ordinal labels), `"neg_log_loss"`, `"accuracy"`, or a callable `f(y_true, proba, classes)`. Ideally it matches the metric you report. |
-| `covariance` | `"total"` | `"total"` is the paper's estimator. Its spread includes between-class scatter, so it is wide. `"within_lw"` (shrunk within-class) is a tighter alternative and was the most consistent in our first study. It is not yet the default. |
+| `covariance` | `"total"` | `"total"` is the paper's estimator. Its spread includes between-class scatter, so it is wide. `"within_lw"` (shrunk within-class) is a tighter alternative; compare it on your data with the same folds and seeds. |
 | `center` | `"class_mean"` | `"per_point"` jitters real rows instead (`bandwidth` sets the scale). Useful as a comparison arm. |
 | `ridge` | `1e-4` | Added to the covariance diagonal for numerical stability. |
 | `eps` | `1e-6` | Probabilities are clipped to `[eps, 1]` before taking logs. |
