@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from sklearn.datasets import make_classification
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -17,8 +18,7 @@ from sklearn.preprocessing import StandardScaler
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from cupmi import evaluate_precomputed_streams  # noqa: E402
-from cupmi.metrics import quadratic_weighted_kappa  # noqa: E402
+from cupmi import evaluate_over_seeds  # noqa: E402
 from cupmi.meta_features import align_predict_proba  # noqa: E402
 
 
@@ -66,35 +66,36 @@ def make_synthetic_streams(seed: int = 7):
 
 def main() -> None:
     streams, y, folds = make_synthetic_streams()
+    # random_state=None lets each seed reseed the combiner as well as the augmentation.
     stacker = RandomForestClassifier(
         n_estimators=80,
         max_depth=5,
         min_samples_leaf=3,
         class_weight="balanced",
-        random_state=0,
+        random_state=None,
         n_jobs=1,
     )
-    result = evaluate_precomputed_streams(
+    sweep = evaluate_over_seeds(
         streams,
         y,
         folds,
+        seeds=5,
+        metrics=["roc_auc_ovr", "qwk"],
         estimator=stacker,
         rhos=(0.0, 1.0, 2.0),
         inner_cv=3,
         scoring="roc_auc_ovr",
-        seed=0,
     )
 
-    stack_qwk = quadratic_weighted_kappa(y, result.stack_proba, np.asarray(result.classes))
-    cupmi_qwk = quadratic_weighted_kappa(y, result.cupmi_proba, np.asarray(result.classes))
-    print("Synthetic cUPMI demo")
-    print(f"Macro AUC stack: {result.stack_score:.3f}")
-    print(f"Macro AUC cUPMI: {result.cupmi_score:.3f}")
-    print(f"Delta AUC:       {result.delta:+.3f}")
-    print(f"QWK stack:       {stack_qwk:.3f}")
-    print(f"QWK cUPMI:       {cupmi_qwk:.3f}")
-    print(f"Selected rhos:   {list(result.selected_rhos)}")
-    print("Note: cUPMI regularizes the combiner; it is not expected to win on every draw.")
+    pd.set_option("display.width", 120)
+    print("Synthetic cUPMI demo: plain stack vs cUPMI, 5 seeds, fixed outer folds\n")
+    print("Per seed:")
+    print(sweep.table.round(4).to_string(index=False))
+    print("\nSummary over seeds (95% t-interval of the delta across seeds):")
+    print(sweep.summary().round(4).to_string())
+    print("\nSelected rho (seeds x outer folds):")
+    print(sweep.selected_rhos.to_string())
+    print("\nNote: cUPMI regularizes the combiner; it is not expected to win on every draw.")
 
 
 if __name__ == "__main__":

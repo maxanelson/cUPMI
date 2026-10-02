@@ -59,9 +59,11 @@ For most projects, the cleanest workflow is:
 from cupmi import stack_log_proba, CUPMICombiner
 
 U = stack_log_proba([prob_stream_1, prob_stream_2, prob_stream_3])
-clf = CUPMICombiner(estimator="rf")
-clf.fit(U_train, y_train)
+clf = CUPMICombiner(estimator="rf", seed=0)
+clf.fit(U, y)
 ```
+
+See the [user guide](guide.md) for the full workflow.
 
 The package does not assume any domain-specific preprocessing, image format, or
 feature-extraction tool.

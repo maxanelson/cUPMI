@@ -15,6 +15,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from .meta_features import align_predict_proba
+from .metrics import quadratic_weighted_kappa
 from .sampler import class_conditional_gaussian_augment
 
 Scoring = str | Callable[[np.ndarray, np.ndarray, np.ndarray], float]
@@ -89,14 +90,20 @@ def _score_probabilities(
     if scoring == "accuracy":
         pred = classes[proba.argmax(axis=1)]
         return float(accuracy_score(y_true, pred))
-    raise ValueError("scoring must be 'roc_auc_ovr', 'neg_log_loss', 'accuracy', or a callable.")
+    if scoring == "qwk":
+        return quadratic_weighted_kappa(y_true, proba, classes)
+    raise ValueError(
+        "scoring must be 'roc_auc_ovr', 'qwk', 'neg_log_loss', 'accuracy', or a callable."
+    )
 
 
 class CUPMICombiner(BaseEstimator, ClassifierMixin):
     """Level-1 combiner with inner-CV cUPMI augmentation.
 
     The wrapped estimator must implement ``fit`` and ``predict_proba``. ``rho``
-    is selected only on the training data supplied to ``fit``.
+    is selected only on the training data supplied to ``fit``. ``covariance``,
+    ``ridge``, ``center`` and ``bandwidth`` are passed to
+    ``class_conditional_gaussian_augment``.
     """
 
     def __init__(
@@ -107,8 +114,10 @@ class CUPMICombiner(BaseEstimator, ClassifierMixin):
         inner_cv: int = 3,
         scoring: Scoring = "roc_auc_ovr",
         seed: int | None = None,
-        covariance: str = "pooled",
+        covariance: str = "total",
         ridge: float = 1e-4,
+        center: str = "class_mean",
+        bandwidth: float = 0.5,
     ):
         self.estimator = estimator
         self.rhos = rhos
@@ -117,6 +126,8 @@ class CUPMICombiner(BaseEstimator, ClassifierMixin):
         self.seed = seed
         self.covariance = covariance
         self.ridge = ridge
+        self.center = center
+        self.bandwidth = bandwidth
 
     def fit(self, X, y):
         X, y = check_X_y(X, y, dtype=float)
@@ -133,6 +144,8 @@ class CUPMICombiner(BaseEstimator, ClassifierMixin):
             seed=self.seed,
             covariance=self.covariance,
             ridge=self.ridge,
+            center=self.center,
+            bandwidth=self.bandwidth,
         )
         self.estimator_ = _clone_with_seed(self.estimator, self.seed, len(self.classes_))
         self.estimator_.fit(X_aug, y_aug)
@@ -173,6 +186,8 @@ class CUPMICombiner(BaseEstimator, ClassifierMixin):
                     seed=self.seed,
                     covariance=self.covariance,
                     ridge=self.ridge,
+                    center=self.center,
+                    bandwidth=self.bandwidth,
                 )
                 model = _clone_with_seed(self.estimator, self.seed, len(self.classes_))
                 model.fit(X_aug, y_aug)
